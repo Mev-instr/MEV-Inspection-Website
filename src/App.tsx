@@ -250,10 +250,7 @@ export default function App() {
               {[
                 { icon: ClipboardCheck, title: "Inspection Services", desc: "Thorough inspection of lifting equipment and tools to ensure safety, reliability, and compliance." },
                 { icon: GraduationCap, title: "Training Programs", desc: "Operator training and assessment programs designed to build skills, confidence, and safety awareness." },
-                { icon: Award, title: "Certification Support", desc: "Assistance with certification and regulatory compliance to keep your operations audit-ready." },
-                { icon: AlertTriangle, title: "Risk Assessment", desc: "Identify potential risks and implement effective control measures for safer workplaces." },
-                { icon: Weight, title: "Load Testing", desc: "Safe and accurate load testing to verify equipment strength and performance under actual conditions." },
-                { icon: ShieldCheck, title: "Safety Audits", desc: "Comprehensive safety audits to improve performance and ensure regulatory compliance." }
+                { icon: Award, title: "Certification Support", desc: "Assistance with certification and regulatory compliance to keep your operations audit-ready." }
               ].map((service, i) => (
                 <div key={i} className="bg-white p-8 rounded-xl border border-gray-100 hover:shadow-lg transition-all group flex flex-col items-start text-left cursor-pointer">
                   <div className="w-12 h-12 rounded-lg bg-primary/5 text-primary flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-white transition-colors">
@@ -364,31 +361,28 @@ export default function App() {
               </h2>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-8 items-center">
-              {/* Image Left */}
-              <div className="lg:w-1/3 rounded-xl overflow-hidden shadow-lg h-64 lg:h-auto">
-                <img 
-                  src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?q=80&w=1000&auto=format&fit=crop" 
-                  alt="Training session" 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              {/* Programs Grid */}
-              <div className="lg:w-2/3 grid grid-cols-2 sm:grid-cols-4 gap-4 relative">
-                {[
-                  { icon: GraduationCap, title: "Operator Training", duration: "1-5 Days" },
-                  { icon: Building2, title: "Crane Operator Training", duration: "2-5 Days" },
-                  { icon: Wrench, title: "Forklift Training", duration: "1-3 Days" },
-                  { icon: Award, title: "Rigging & Lifting", duration: "1-3 Days" },
-                ].map((prog, i) => (
-                  <div key={i} className="bg-white border border-gray-100 rounded-xl p-6 flex flex-col items-center text-center hover:border-primary/50 transition-colors cursor-pointer">
-                    <prog.icon className="w-10 h-10 text-primary mb-4 stroke-1" />
-                    <h3 className="font-bold text-navy text-xs mb-2 h-8">{prog.title}</h3>
-                    <span className="text-xs text-primary font-medium">{prog.duration}</span>
-                  </div>
-                ))}
-              </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {[
+                { icon: Settings2, title: "All Type of Equipment Operator" },
+                { icon: Award, title: "Rigger Level III & II" },
+                { icon: Weight, title: "Crane Operator" },
+                { icon: Factory, title: "Scaffold Erector & Dismantler" },
+                { icon: ClipboardCheck, title: "Permit Issuer & Receiver LOTO" },
+                { icon: MapPin, title: "Flagman" },
+                { icon: AlertTriangle, title: "Fire Watcher" },
+                { icon: ShieldCheck, title: "First Aider" },
+                { icon: Phone, title: "Emergency Coordinator" },
+                { icon: Search, title: "Risk Assessment" },
+                { icon: CheckCircle2, title: "Job Safe Practice" },
+                { icon: Eye, title: "Confined Space Entrant/Attendant" },
+                { icon: Building2, title: "Work At Height Personnel" },
+                { icon: GraduationCap, title: "Work At Height Supervisor" },
+              ].map((prog, i) => (
+                <div key={i} className="bg-white border border-gray-100 rounded-xl p-5 flex flex-col items-center text-center justify-center hover:border-primary/50 transition-colors cursor-pointer shadow-sm min-h-[120px]">
+                  <prog.icon className="w-8 h-8 text-primary mb-3 stroke-1" />
+                  <h3 className="font-bold text-navy text-[11px] leading-snug">{prog.title}</h3>
+                </div>
+              ))}
             </div>
 
             {/* CTA specific for training/inspection inline */}
