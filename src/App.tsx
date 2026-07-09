@@ -11,6 +11,14 @@ import {
 export default function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const observerOptions = {
@@ -48,7 +56,27 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-white text-neutral-dark">
+    <>
+      <AnimatePresence>
+        {isLoading && (
+          <motion.div 
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5, ease: "easeInOut" }}
+            className="fixed inset-0 z-[100] bg-white flex flex-col items-center justify-center"
+          >
+            <div className="relative flex items-center justify-center mb-8">
+              <div className="w-16 h-16 border-4 border-primary/10 border-t-primary rounded-full animate-spin absolute"></div>
+            </div>
+            <img 
+              src="https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0459155438.firebasestorage.app/o/Branding%2FHorizonal%20MEV%20logo.png?alt=media&token=6fd9c05f-5c66-4c31-94b5-06ff4cb6c980" 
+              alt="MEV Logo" 
+              className="h-10 object-contain animate-pulse"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <div className="min-h-screen flex flex-col font-sans bg-white text-neutral-dark">
       {/* Navigation */}
       <header className="bg-navy sticky top-0 z-50 border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -561,5 +589,6 @@ export default function App() {
         </div>
       </footer>
     </div>
+    </>
   );
 }
