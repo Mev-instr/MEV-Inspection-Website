@@ -1,9 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { verifyCertificate } from '../firebase';
 import { Search, CheckCircle2, XCircle, Loader2, ArrowLeft, ShieldCheck, FileText } from 'lucide-react';
 import { motion } from 'motion/react';
+
+type CertType = 'machine' | 'lifting' | 'operator';
+
+interface VerificationResult {
+  found: boolean;
+  certId?: string;
+  status?: string;
+  result?: string;
+  validity?: string;
+  expirationDate?: string;
+  clientName?: string;
+  equipmentName?: string;
+  operatorName?: string;
+  licenseNumber?: string;
+  licenseExpiry?: string;
+  certifiedMachines?: string | string[];
+  message?: string;
+}
 
 export default function Verify() {
   const { id } = useParams<{ id: string }>();
@@ -12,76 +29,55 @@ export default function Verify() {
   
   const typeParam = searchParams.get('type') || 'all';
   
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState(
-    typeParam === 'all' ? 'operators' : 
-    typeParam === 'liftingToolCertificates' ? 'machineCertificates' : 
-    typeParam
+  const [searchQuery, setSearchQuery] = useState(id || '');
+  const [certType, setCertType] = useState<CertType>(
+    typeParam === 'all' ? 'operator' : 
+    typeParam === 'liftingToolCertificates' ? 'machine' : 
+    typeParam === 'operatorCards' || typeParam === 'operators' ? 'operator' :
+    typeParam === 'machineCertificates' ? 'machine' : 'machine'
   );
-  const [isSearching, setIsSearching] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<VerificationResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading' | 'found' | 'not-found'>('idle');
-  const [collectionFound, setCollectionFound] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
       setSearchQuery(id);
-      verifyId(id, typeParam);
+      verifyId(id, certType);
     }
-  }, [id, typeParam]);
+  }, [id, certType]);
 
-  const verifyId = async (certificateId: string, typeToSearch: string) => {
+  const verifyId = async (certificateId: string, type: CertType) => {
     if (!certificateId.trim()) return;
-    
-    setStatus('loading');
+
+    setLoading(true);
+    setError(null);
     setResult(null);
-    setCollectionFound(null);
-
-    const allCollections = [
-      { name: 'operators', label: 'Operator Card' },
-      { name: 'machineCertificates', label: 'Machine Certificate' },
-      { name: 'liftingToolCertificates', label: 'Lifting Tool Certificate' }
-    ];
-
-    let collectionsToCheck = [];
-    if (typeToSearch === 'all') {
-      collectionsToCheck = allCollections;
-    } else if (typeToSearch === 'machineCertificates') {
-      collectionsToCheck = allCollections.filter(c => c.name === 'machineCertificates' || c.name === 'liftingToolCertificates');
-    } else {
-      collectionsToCheck = allCollections.filter(c => c.name === typeToSearch);
-    }
-
-    let foundData = null;
-    let foundLabel = null;
-    let foundCollectionName = null;
+    setStatus('loading');
 
     try {
-      for (const coll of collectionsToCheck) {
-        const docRef = doc(db, coll.name, certificateId);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          foundData = docSnap.data();
-          foundLabel = coll.label;
-          foundCollectionName = coll.name;
-          break;
-        }
-      }
-
-      if (foundData) {
-        setResult(foundData);
-        setCollectionFound(foundLabel);
-        setStatus('found');
-        if (typeToSearch === 'all' && foundCollectionName) {
-          setSelectedType(foundCollectionName === 'liftingToolCertificates' ? 'machineCertificates' : foundCollectionName);
-        }
-      } else {
-        setStatus('not-found');
-      }
-    } catch (error) {
-      console.error('Error fetching certificate:', error);
+      const response = await verifyCertificate({ 
+        certId: certificateId.trim(), 
+        certType: type 
+      });
+      const data = response.data as VerificationResult;
+      setResult(data);
+      setStatus(data.found ? 'found' : 'not-found');
+    } catch (err: any) {
+      console.error('Verification error:', err);
       setStatus('not-found');
+      if (err.code === 'functions/resource-exhausted') {
+        setError('Too many searches. Please wait a few minutes and try again.');
+      } else if (err.code === 'functions/failed-precondition') {
+        setError('Security check failed. Please refresh the page.');
+      } else if (err.code === 'functions/internal' || err.message === 'internal') {
+        setError('Internal server error. If testing in AI Studio, ensure this preview URL is added to your reCAPTCHA domains, and that the Cloud Function allows unauthenticated invocations (allUsers) in IAM.');
+      } else {
+        setError(err.message || 'Verification failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -89,7 +85,7 @@ export default function Verify() {
     e.preventDefault();
     if (searchQuery.trim()) {
       let url = `/verify/${searchQuery.trim()}`;
-      url += `?type=${selectedType}`;
+      url += `?type=${certType}`;
       navigate(url);
     }
   };
@@ -117,11 +113,12 @@ export default function Verify() {
   const renderResultDetails = () => {
     if (!result) return null;
 
-    const excludedKeys = ['id', 'createdAt', 'updatedAt'];
-    const entries = Object.entries(result).filter(([key]) => {
+    const excludedKeys = ['found', 'message'];
+    const entries = Object.entries(result).filter(([key, value]) => {
       const lowerKey = key.toLowerCase();
       return (
         !excludedKeys.includes(key) && 
+        value !== undefined && value !== null && value !== '' &&
         !lowerKey.includes('signature') && 
         !lowerKey.includes('naming') && 
         lowerKey !== 'status'
@@ -130,7 +127,7 @@ export default function Verify() {
 
     const isHighlightKey = (k: string) => {
       const lower = k.toLowerCase();
-      return lower.includes('date') || lower.includes('expiry') || lower.includes('result') || lower.includes('report');
+      return lower.includes('date') || lower.includes('expiry') || lower.includes('result') || lower.includes('report') || lower.includes('validity');
     };
 
     const isClientKey = (k: string) => {
@@ -227,12 +224,13 @@ export default function Verify() {
                 <FileText className="w-5 h-5" />
               </div>
               <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
+                value={certType}
+                onChange={(e) => setCertType(e.target.value as CertType)}
                 className="py-4 px-3 outline-none text-gray-700 bg-transparent font-medium text-sm w-full cursor-pointer hover:bg-gray-100 transition-colors"
               >
-                <option value="operators">Operator Card</option>
-                <option value="machineCertificates">Machine Certificate</option>
+                <option value="operator">Operator Card</option>
+                <option value="machine">Machine Certificate</option>
+                <option value="lifting">Lifting Tool Certificate</option>
               </select>
             </div>
             <div className="flex-1 flex">
@@ -249,12 +247,18 @@ export default function Verify() {
             </div>
             <button 
               type="submit" 
-              disabled={status === 'loading' || !searchQuery.trim()}
+              disabled={loading || !searchQuery.trim()}
               className="bg-primary text-white px-8 py-4 sm:py-auto font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Verify
             </button>
           </form>
+
+          {error && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              {error}
+            </div>
+          )}
         </div>
 
         <motion.div 
@@ -262,14 +266,14 @@ export default function Verify() {
           animate={{ opacity: 1, y: 0 }}
           className="w-full"
         >
-          {status === 'loading' && (
+          {loading && (
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 flex flex-col items-center justify-center p-12 h-64">
               <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
               <p className="text-gray-500 font-medium animate-pulse">Verifying Database Records...</p>
             </div>
           )}
 
-          {status === 'found' && result && (
+          {!loading && status === 'found' && result && (
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
               <div className="p-8 sm:p-10">
                 <div className="flex flex-col sm:flex-row items-center justify-between border-b border-gray-100 pb-8 mb-8 gap-6">
@@ -279,12 +283,20 @@ export default function Verify() {
                     </div>
                     <div>
                       <h2 className="text-2xl font-bold text-navy">Verified Authentic</h2>
-                      <p className="text-gray-500 text-sm mt-1">{collectionFound}</p>
+                      <p className="text-gray-500 text-sm mt-1">{
+                        certType === 'operator' ? 'Operator Card' : 
+                        certType === 'lifting' ? 'Lifting Tool Certificate' : 
+                        'Machine Certificate'
+                      }</p>
                     </div>
                   </div>
-                  <div className="bg-green-500 text-white px-5 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 shadow-sm shadow-green-500/20 w-full sm:w-auto justify-center">
+                  <div className={`text-white px-5 py-2.5 rounded-full font-bold text-sm flex items-center gap-2 shadow-sm w-full sm:w-auto justify-center ${
+                    result.status === 'VALID' || result.result === 'Pass' ? 'bg-green-500 shadow-green-500/20' : 
+                    result.status === 'EXPIRED' ? 'bg-red-500 shadow-red-500/20' : 
+                    'bg-amber-500 shadow-amber-500/20'
+                  }`}>
                     <CheckCircle2 className="w-4 h-4" />
-                    VALID RECORD
+                    {result.status || result.result || 'VALID RECORD'}
                   </div>
                 </div>
 
@@ -297,7 +309,7 @@ export default function Verify() {
                   <div className="mb-4">
                     <span className="block text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">ID Number</span>
                     <span className="block text-lg font-mono font-bold text-navy bg-white px-3 py-2 border border-gray-200 rounded-lg">
-                      {id || searchQuery}
+                      {result.certId || id || searchQuery}
                     </span>
                   </div>
 
@@ -312,19 +324,20 @@ export default function Verify() {
             </div>
           )}
 
-          {status === 'not-found' && (
+          {!loading && status === 'not-found' && (
             <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden flex flex-col items-center justify-center p-12 text-center">
               <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-6">
                 <XCircle className="w-10 h-10" />
               </div>
               <h2 className="text-2xl font-bold text-navy mb-2">Verification Failed</h2>
               <p className="text-gray-600 mb-8 max-w-md">
-                We could not find any active certificate or operator card matching the ID "{id || searchQuery}".
+                {result?.message || `We could not find any active certificate or operator card matching the ID "${id || searchQuery}".`}
               </p>
               <div className="bg-orange-50 text-orange-800 p-4 rounded-lg text-sm max-w-md border border-orange-100">
                 <p className="font-semibold mb-1">Why might this happen?</p>
                 <ul className="text-left list-disc pl-5 space-y-1">
                   <li>The ID was typed incorrectly.</li>
+                  <li>The certificate type selected does not match.</li>
                   <li>The certificate has expired and was removed.</li>
                   <li>The record does not belong to an authentic MEV-issued document.</li>
                 </ul>
