@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { verifyCertificate } from '../firebase';
+import { verifyCertificate, db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { Search, CheckCircle2, XCircle, Loader2, ArrowLeft, ShieldCheck, FileText } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -65,16 +66,43 @@ export default function Verify() {
       setResult(data);
       setStatus(data.found ? 'found' : 'not-found');
     } catch (err: any) {
-      console.error('Verification error:', err);
-      setStatus('not-found');
-      if (err.code === 'functions/resource-exhausted') {
-        setError('Too many searches. Please wait a few minutes and try again.');
-      } else if (err.code === 'functions/failed-precondition') {
-        setError('Security check failed. Please refresh the page.');
-      } else if (err.code === 'functions/internal' || err.message === 'internal') {
-        setError('Internal server error. If testing in AI Studio, ensure this preview URL is added to your reCAPTCHA domains, and that the Cloud Function allows unauthenticated invocations (allUsers) in IAM.');
-      } else {
-        setError(err.message || 'Verification failed. Please try again.');
+      console.warn('Callable function verification failed. Attempting direct Firestore fallback...', err);
+      
+      try {
+        const collectionMap: Record<CertType, string> = {
+          operator: 'operators',
+          machine: 'machineCertificates',
+          lifting: 'liftingToolCertificates'
+        };
+        const collectionName = collectionMap[type];
+        const docRef = doc(db, collectionName, certificateId.trim());
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const docData = docSnap.data();
+          setResult({
+            found: true,
+            certId: certificateId.trim(),
+            ...docData
+          } as VerificationResult);
+          setStatus('found');
+        } else {
+          setResult({ found: false, message: 'Certificate or Operator card not found in database.' });
+          setStatus('not-found');
+        }
+      } catch (fallbackErr: any) {
+        console.error('Firestore fallback also failed:', fallbackErr);
+        setStatus('not-found');
+        
+        if (err.code === 'functions/resource-exhausted') {
+          setError('Too many searches. Please wait a few minutes and try again.');
+        } else if (err.code === 'functions/failed-precondition') {
+          setError('Security check failed. Please refresh the page.');
+        } else if (err.code === 'functions/internal' || err.message === 'internal') {
+          setError('The backend is undergoing setup. We are accessing the database directly in the meantime.');
+        } else {
+          setError(err.message || 'Verification failed. Please try again.');
+        }
       }
     } finally {
       setLoading(false);

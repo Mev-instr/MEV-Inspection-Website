@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
+import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyDyZsxPKGiJCazVqLJemLwFeuEyreKQS6w",
@@ -13,6 +14,8 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
+export const db = getFirestore(app, "ai-studio-mevinserp-8508ed93-8dc1-47fa-8fdc-87ee68eae527");
 
 // App Check is mandatory — without it, the verifyCertificate function will reject calls
 const appCheck = initializeAppCheck(app, {

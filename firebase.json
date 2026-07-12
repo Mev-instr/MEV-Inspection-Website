@@ -1,4 +1,15 @@
 {
+  "functions": {
+    "source": "functions",
+    "codebase": "default",
+    "ignore": [
+      "node_modules",
+      ".git",
+      "firebase-debug.log",
+      "firestore-debug.log",
+      "pubsub-debug.log"
+    ]
+  },
   "hosting": {
     "site": "my-custom-landing-page",
     "public": "dist",
