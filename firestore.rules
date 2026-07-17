@@ -1,0 +1,24 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow anyone to submit a contact request
+    match /contactRequests/{request} {
+      allow create: if true;
+      allow read, update, delete: if false;
+    }
+    
+    // Existing collections (from previous turns)
+    match /operators/{operatorId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /machineCertificates/{certId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /liftingToolCertificates/{certId} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

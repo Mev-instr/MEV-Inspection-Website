@@ -10,6 +10,9 @@
       "pubsub-debug.log"
     ]
   },
+  "firestore": {
+    "rules": "firestore.rules"
+  },
   "hosting": {
     "site": "my-custom-landing-page",
     "public": "dist",

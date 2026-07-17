@@ -6,14 +6,27 @@ import {
   Eye, Target, ClipboardCheck, GraduationCap, Award, AlertTriangle, Weight, 
   Factory, Building2, Ship, Zap, Wrench, FileText, Search, Phone, Mail, 
   Linkedin, Facebook, Instagram, Plus, Star, Map, FileSignature, MonitorCheck,
-  Check, Sliders, Atom, Settings2
+  Check, Sliders, Atom, Settings2, Loader2
 } from 'lucide-react';
+import { db } from './firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function HomePage() {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('home');
   const [isLoading, setIsLoading] = useState(true);
+
+  // Form State
+  const [formData, setFormData] = useState({
+    name: '',
+    company: '',
+    phone: '',
+    equipmentType: '',
+    message: ''
+  });
+  const [formStatus, setFormStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -566,28 +579,121 @@ export default function HomePage() {
             <div className="bg-[#142338] p-8 sm:p-10 rounded-2xl border border-white/5 shadow-2xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-primary/20 blur-[50px] rounded-full"></div>
               <h3 className="text-2xl font-bold text-white mb-8 uppercase tracking-wider relative z-10">Request A Quote</h3>
-              <form className="space-y-5 relative z-10">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <input type="text" placeholder="Your Name" className="w-full bg-[#0E1B2D] text-white placeholder-gray-500 px-4 py-3.5 text-sm rounded-lg border border-white/5 focus:border-primary focus:outline-none transition-colors" />
-                  <input type="text" placeholder="Company Name" className="w-full bg-[#0E1B2D] text-white placeholder-gray-500 px-4 py-3.5 text-sm rounded-lg border border-white/5 focus:border-primary focus:outline-none transition-colors" />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <input type="tel" placeholder="Phone Number" className="w-full bg-[#0E1B2D] text-white placeholder-gray-500 px-4 py-3.5 text-sm rounded-lg border border-white/5 focus:border-primary focus:outline-none transition-colors" />
-                  <div className="relative">
-                    <select className="w-full bg-[#0E1B2D] text-gray-400 px-4 py-3.5 text-sm rounded-lg border border-white/5 focus:border-primary focus:outline-none appearance-none h-full transition-colors">
-                      <option value="">Equipment Type</option>
-                      <option value="crane">Cranes</option>
-                      <option value="forklift">Forklifts</option>
-                      <option value="mewp">MEWP</option>
-                      <option value="other">Other</option>
-                    </select>
+              
+              {formStatus === 'success' ? (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-green-500/10 border border-green-500/20 p-8 rounded-xl text-center relative z-10"
+                >
+                  <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-4" />
+                  <h4 className="text-xl font-bold text-white mb-2">Thank You!</h4>
+                  <p className="text-gray-400 text-sm mb-6">Your request has been received. Our team will get back to you shortly.</p>
+                  <button 
+                    onClick={() => setFormStatus('idle')}
+                    className="text-primary font-bold text-sm hover:underline"
+                  >
+                    Send another request
+                  </button>
+                </motion.div>
+              ) : (
+                <form 
+                  className="space-y-5 relative z-10"
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (formStatus === 'submitting') return;
+                    
+                    setFormStatus('submitting');
+                    setErrorMessage('');
+
+                    try {
+                      await addDoc(collection(db, 'contactRequests'), {
+                        ...formData,
+                        submittedAt: serverTimestamp(),
+                        status: 'pending'
+                      });
+                      setFormStatus('success');
+                      setFormData({ name: '', company: '', phone: '', equipmentType: '', message: '' });
+                    } catch (err: any) {
+                      console.error('Submission error:', err);
+                      setFormStatus('error');
+                      setErrorMessage('Failed to send request. Please try again or call us directly.');
+                    }
+                  }}
+                >
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="Your Name" 
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full bg-[#0E1B2D] text-white placeholder-gray-500 px-4 py-3.5 text-sm rounded-lg border border-white/5 focus:border-primary focus:outline-none transition-colors" 
+                    />
+                    <input 
+                      type="text" 
+                      required
+                      placeholder="Company Name" 
+                      value={formData.company}
+                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                      className="w-full bg-[#0E1B2D] text-white placeholder-gray-500 px-4 py-3.5 text-sm rounded-lg border border-white/5 focus:border-primary focus:outline-none transition-colors" 
+                    />
                   </div>
-                </div>
-                <textarea placeholder="Message" rows={4} className="w-full bg-[#0E1B2D] text-white placeholder-gray-500 px-4 py-3.5 text-sm rounded-lg border border-white/5 focus:border-primary focus:outline-none resize-none transition-colors"></textarea>
-                <button type="button" className="w-full bg-primary hover:bg-primary/90 text-white px-6 py-4 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 mt-2 shadow-lg shadow-primary/20">
-                  Send Request <ArrowRight className="w-4 h-4" />
-                </button>
-              </form>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <input 
+                      type="tel" 
+                      required
+                      placeholder="Phone Number" 
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full bg-[#0E1B2D] text-white placeholder-gray-500 px-4 py-3.5 text-sm rounded-lg border border-white/5 focus:border-primary focus:outline-none transition-colors" 
+                    />
+                    <div className="relative">
+                      <select 
+                        required
+                        value={formData.equipmentType}
+                        onChange={(e) => setFormData({ ...formData, equipmentType: e.target.value })}
+                        className="w-full bg-[#0E1B2D] text-gray-400 px-4 py-3.5 text-sm rounded-lg border border-white/5 focus:border-primary focus:outline-none appearance-none h-full transition-colors"
+                      >
+                        <option value="">Equipment Type</option>
+                        <option value="crane">Cranes</option>
+                        <option value="forklift">Forklifts</option>
+                        <option value="mewp">MEWP</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+                  <textarea 
+                    required
+                    placeholder="Message" 
+                    rows={4} 
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                    className="w-full bg-[#0E1B2D] text-white placeholder-gray-500 px-4 py-3.5 text-sm rounded-lg border border-white/5 focus:border-primary focus:outline-none resize-none transition-colors"
+                  ></textarea>
+                  
+                  {formStatus === 'error' && (
+                    <p className="text-red-500 text-xs">{errorMessage}</p>
+                  )}
+
+                  <button 
+                    type="submit" 
+                    disabled={formStatus === 'submitting'}
+                    className="w-full bg-primary hover:bg-primary/90 text-white px-6 py-4 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 mt-2 shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {formStatus === 'submitting' ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      <>
+                        Send Request <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </form>
+              )}
             </div>
 
           </div>
