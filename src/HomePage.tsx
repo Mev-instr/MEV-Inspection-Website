@@ -102,6 +102,10 @@ export default function HomePage() {
                 src="https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0459155438.firebasestorage.app/o/Branding%2FHorizonal%20MEV%20logo.png?alt=media&token=6fd9c05f-5c66-4c31-94b5-06ff4cb6c980" 
                 alt="MEV Inspection & Training Logo" 
                 className="h-10 w-auto object-contain filter brightness-0 invert"
+                loading="lazy"
+                decoding="async"
+                width="333"
+                height="103"
               />
             </div>
 
@@ -142,6 +146,7 @@ export default function HomePage() {
               <button 
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="text-white hover:text-primary transition-colors p-2"
+                aria-label="Toggle mobile menu"
               >
                 {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
@@ -259,6 +264,10 @@ export default function HomePage() {
                   src="https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0459155438.firebasestorage.app/o/Website%2FAbout%20us%20img.webp?alt=media&token=601cb523-ee37-48a8-9a0c-1d9ce2c9ab99" 
                   alt="About MEV Inspection" 
                   className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                  width="800"
+                  height="600"
                 />
               </div>
               
@@ -373,6 +382,10 @@ export default function HomePage() {
                     src="https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0459155438.firebasestorage.app/o/Website%2Fwhy-us-img.png?alt=media&token=0d737cab-be77-45ba-9942-7f617e746e4b" 
                     alt="Why Choose MEV Training" 
                     className="w-full h-auto drop-shadow-2xl transform hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
+                    decoding="async"
+                    width="600"
+                    height="800"
                   />
                 </div>
               </div>
@@ -441,14 +454,14 @@ export default function HomePage() {
             </div>
 
             {/* CTA specific for training/inspection inline */}
-            <div className="mt-8 bg-primary rounded-xl p-8 text-white flex flex-col md:flex-row items-center justify-between shadow-xl">
+            <div className="mt-8 bg-navy rounded-xl p-8 text-white flex flex-col md:flex-row items-center justify-between shadow-xl">
               <div className="mb-6 md:mb-0 md:mr-8 text-center md:text-left">
                 <h3 className="text-2xl font-bold mb-2">Need Equipment Inspection or Training?</h3>
-                <p className="text-white/80 text-sm">
+                <p className="text-gray-300 text-sm">
                   Let our experts help you ensure safety, compliance, and operational excellence.
                 </p>
               </div>
-              <a href="#contact" className="bg-white text-primary px-8 py-3 rounded font-bold text-sm hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 whitespace-nowrap shadow-md">
+              <a href="#contact" className="bg-primary text-white px-8 py-3 rounded font-bold text-sm hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 whitespace-nowrap shadow-md">
                 Contact Us Today <ArrowRight className="w-4 h-4" />
               </a>
             </div>
@@ -548,7 +561,7 @@ export default function HomePage() {
                     <MapPin className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="text-white font-bold text-sm mb-1 uppercase tracking-wider">Our Location</h4>
+                    <h3 className="text-white font-bold text-sm mb-1 uppercase tracking-wider">Our Location</h3>
                     <span className="text-sm text-gray-400">Jeddah, Saudi Arabia</span>
                   </div>
                 </li>
@@ -557,7 +570,7 @@ export default function HomePage() {
                     <Phone className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="text-white font-bold text-sm mb-1 uppercase tracking-wider">Phone Numbers</h4>
+                    <h3 className="text-white font-bold text-sm mb-1 uppercase tracking-wider">Phone Numbers</h3>
                     <span className="text-sm text-gray-400 block mb-1">+966 53 404 3543</span>
                     <span className="text-sm text-gray-400 block">+966 55 448 1920</span>
                   </div>
@@ -567,7 +580,7 @@ export default function HomePage() {
                     <Mail className="w-6 h-6" />
                   </div>
                   <div>
-                    <h4 className="text-white font-bold text-sm mb-1 uppercase tracking-wider">Email & Web</h4>
+                    <h3 className="text-white font-bold text-sm mb-1 uppercase tracking-wider">Email & Web</h3>
                     <span className="text-sm text-gray-400 block mb-1">info@mev-ins.com</span>
                     <span className="text-sm text-gray-400 block">www.mev-ins.com</span>
                   </div>
@@ -651,6 +664,7 @@ export default function HomePage() {
                     <div className="relative">
                       <select 
                         required
+                        aria-label="Equipment Type"
                         value={formData.equipmentType}
                         onChange={(e) => setFormData({ ...formData, equipmentType: e.target.value })}
                         className="w-full bg-[#0E1B2D] text-gray-400 px-4 py-3.5 text-sm rounded-lg border border-white/5 focus:border-primary focus:outline-none appearance-none h-full transition-colors"
@@ -698,11 +712,15 @@ export default function HomePage() {
 
           </div>
           
-          <div className="pt-8 border-t border-white/10 flex flex-col justify-center items-center text-xs text-gray-500 text-center">
+          <div className="pt-8 border-t border-white/10 flex flex-col justify-center items-center text-xs text-gray-400 text-center">
             <img 
               src="https://firebasestorage.googleapis.com/v0/b/gen-lang-client-0459155438.firebasestorage.app/o/Branding%2FHorizonal%20MEV%20logo.png?alt=media&token=6fd9c05f-5c66-4c31-94b5-06ff4cb6c980" 
               alt="MEV Inspection & Training" 
               className="h-7 w-auto mb-5 filter brightness-0 invert opacity-30"
+              loading="lazy"
+              decoding="async"
+              width="333"
+              height="103"
             />
             <p>&copy; {new Date().getFullYear()} MEV-Inspections and Training. All Rights Reserved.</p>
           </div>
